@@ -15,6 +15,11 @@ import parser from 'postcss-value-parser';
 /**
  * Convert a CSS value in JS to the final CSS string value
  */
+// Numbers are rendered into CSS with at most 4 decimal places.
+export function roundForCss(value: number): number {
+  return Math.round(value * 10000) / 10000;
+}
+
 export default function transformValue(
   key: string,
   rawValue: string | number,
@@ -22,7 +27,7 @@ export default function transformValue(
 ): string {
   const value =
     typeof rawValue === 'number'
-      ? String(Math.round(rawValue * 10000) / 10000) + getNumberSuffix(key)
+      ? String(roundForCss(rawValue)) + getNumberSuffix(key)
       : rawValue;
 
   if (
