@@ -8,7 +8,6 @@
  */
 
 import parser from 'postcss-value-parser';
-import { roundForCss } from '../shared/utils/transform-value';
 import * as errMsgs from './evaluation-errors';
 
 // Custom property names may contain any character except ')' — including
@@ -22,9 +21,13 @@ const CSS_UNITS: Set<string> = new Set([
   'em',
   'rem',
   'ex',
+  'rex',
   'ch',
+  'rch',
   'cap',
+  'rcap',
   'ic',
+  'ric',
   'lh',
   'rlh',
   'vw',
@@ -35,10 +38,28 @@ const CSS_UNITS: Set<string> = new Set([
   'vi',
   'svw',
   'svh',
+  'svb',
+  'svi',
+  'svmin',
+  'svmax',
   'lvw',
   'lvh',
+  'lvb',
+  'lvi',
+  'lvmin',
+  'lvmax',
   'dvw',
   'dvh',
+  'dvb',
+  'dvi',
+  'dvmin',
+  'dvmax',
+  'cqw',
+  'cqh',
+  'cqi',
+  'cqb',
+  'cqmin',
+  'cqmax',
   'cm',
   'mm',
   'q',
@@ -127,7 +148,9 @@ export function isCalcTerm(value: mixed): implies value is number | string {
 
 function calcOperandToString(value: number | string): string {
   if (typeof value === 'number') {
-    return String(roundForCss(value));
+    // These are intermediate operands, not final declaration values. Rounding
+    // here can turn a small nonzero divisor into zero or overflow a large one.
+    return String(value);
   }
   if (isBalancedCalc(value)) {
     // Strip nested `calc(...)` down to plain parens to keep the output flat.
@@ -177,7 +200,7 @@ function isSeparatedCssTokenConcat(left: mixed, right: mixed): boolean {
   if (other === '') {
     return true;
   }
-  return leftIsRef ? /^[\s,)]/.test(other) : /[\s,(]$/.test(other);
+  return leftIsRef ? /^[\s,)/*]/.test(other) : /[\s,(/*]$/.test(other);
 }
 
 export function evaluateCssTokenConcat(

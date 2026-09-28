@@ -79,11 +79,20 @@ describe('buildBinaryCalc', () => {
     );
   });
 
-  test('rounds numeric operands to 4 decimals', () => {
+  test('preserves the precision of intermediate operands', () => {
     expect(buildBinaryCalc(1 / 3, '*', 'var(--a)')).toBe(
-      'calc(0.3333 * var(--a))',
+      'calc(0.3333333333333333 * var(--a))',
     );
   });
+
+  test.each([0.00001, 1e-10, Number.MAX_VALUE])(
+    'preserves the finite divisor %s',
+    (divisor) => {
+      expect(buildBinaryCalc('var(--a)', '/', divisor)).toBe(
+        `calc(var(--a) / ${String(divisor)})`,
+      );
+    },
+  );
 
   test('strips nested calc() operands down to parens', () => {
     expect(buildBinaryCalc('calc(var(--a) + var(--b))', '*', 2)).toBe(

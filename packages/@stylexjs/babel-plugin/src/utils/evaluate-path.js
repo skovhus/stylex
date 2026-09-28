@@ -1293,13 +1293,20 @@ function evaluateQuasis(
   raw: boolean = false,
 ) {
   let str = '';
+  let previousValue: mixed = '';
 
   const append = (nextValue: mixed, nextPath: NodePath<>): void => {
-    const result = evaluateCssTokenConcat(str, nextValue);
+    // Validate adjacent fragments, not the accumulated prefix: after adding
+    // `translateX(`, a token must still reject a following `px)` fragment.
+    const result = evaluateCssTokenConcat(previousValue, nextValue);
     if (result.type === 'deopt') {
       deopt(nextPath, state, result.reason, errMsgs.CSS_TOKEN_ERROR);
     } else if (result.type === 'value') {
-      str = String(result.value);
+      str += String(nextValue);
+      // Empty quasis/interpolations must not hide a token from the next fragment.
+      if (nextValue !== '') {
+        previousValue = nextValue;
+      }
     }
   };
 
