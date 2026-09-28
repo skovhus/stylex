@@ -26,7 +26,7 @@ import { isCSSType } from '../shared/types';
 import { convertObjectToAST } from '../utils/js-to-ast';
 import { createVarGroupProxy, evaluate } from '../utils/evaluate-path';
 import { isVariableNamedExported } from '../utils/ast-helpers';
-import { evaluationError } from './visitor-utils';
+import { evaluationError } from '../utils/evaluation-result';
 
 class DefineVarsValueError extends Error {}
 
@@ -172,18 +172,14 @@ export default function transformStyleXDefineVars(
       },
     });
 
-    const { confident, value, reason, deopt } = evaluate(firstArg, state, {
+    const evaluation = evaluate(firstArg, state, {
       identifiers,
       memberExpressions,
     });
-    if (!confident) {
-      throw evaluationError(
-        deopt,
-        reason,
-        callExpressionPath,
-        messages.nonStaticValue('defineVars'),
-      );
+    if (!evaluation.confident) {
+      throw evaluationError(evaluation.error);
     }
+    const { value } = evaluation;
     if (typeof value !== 'object' || value == null) {
       throw callExpressionPath.buildCodeFrameError(
         messages.nonStyleObject('defineVars'),

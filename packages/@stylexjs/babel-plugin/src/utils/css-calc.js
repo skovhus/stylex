@@ -8,85 +8,13 @@
  */
 
 import parser from 'postcss-value-parser';
+import { hasValidTokenBoundaries, isNumericUnit } from 'style-value-parser';
 import * as errMsgs from './evaluation-errors';
 
 // Custom property names may contain any character except ')' — including
 // unicode identifiers, which `defineVars`/`defineConsts` pass through
 // verbatim for keys that start with '--'.
 const CSS_VAR_PATTERN = /^var\(--[^)]+\)$/;
-
-const CSS_UNITS: Set<string> = new Set([
-  // <length>
-  'px',
-  'em',
-  'rem',
-  'ex',
-  'rex',
-  'ch',
-  'rch',
-  'cap',
-  'rcap',
-  'ic',
-  'ric',
-  'lh',
-  'rlh',
-  'vw',
-  'vh',
-  'vmin',
-  'vmax',
-  'vb',
-  'vi',
-  'svw',
-  'svh',
-  'svb',
-  'svi',
-  'svmin',
-  'svmax',
-  'lvw',
-  'lvh',
-  'lvb',
-  'lvi',
-  'lvmin',
-  'lvmax',
-  'dvw',
-  'dvh',
-  'dvb',
-  'dvi',
-  'dvmin',
-  'dvmax',
-  'cqw',
-  'cqh',
-  'cqi',
-  'cqb',
-  'cqmin',
-  'cqmax',
-  'cm',
-  'mm',
-  'q',
-  'in',
-  'pt',
-  'pc',
-  // <angle>
-  'deg',
-  'grad',
-  'rad',
-  'turn',
-  // <time>
-  's',
-  'ms',
-  // <frequency>
-  'hz',
-  'khz',
-  // <resolution>
-  'dpi',
-  'dpcm',
-  'dppx',
-  'x',
-  // grid
-  'fr',
-  // <percentage>
-  '%',
-]);
 
 function isBalancedCalc(value: string): boolean {
   if (!value.startsWith('calc(') || !value.endsWith(')')) {
@@ -143,7 +71,7 @@ export function isCalcTerm(value: mixed): implies value is number | string {
     return false;
   }
   const unit = parsed.unit.toLowerCase();
-  return unit === '' || CSS_UNITS.has(unit);
+  return unit === '' || isNumericUnit(unit);
 }
 
 function calcOperandToString(value: number | string): string {
@@ -186,31 +114,23 @@ function deopt(reason: string): CssTokenEvaluationResult {
 
 const unhandled: CssTokenEvaluationResult = { type: 'unhandled' };
 
-function isSeparatedCssTokenConcat(left: mixed, right: mixed): boolean {
-  const leftIsRef = isCssVarOrCalc(left);
-  const rightIsRef = isCssVarOrCalc(right);
-  if (!leftIsRef && !rightIsRef) {
-    return true;
-  }
-
-  const other = leftIsRef ? right : left;
-  if (typeof other !== 'string') {
-    return false;
-  }
-  if (other === '') {
-    return true;
-  }
-  return leftIsRef ? /^[\s,)/*]/.test(other) : /[\s,(/*]$/.test(other);
-}
-
 export function evaluateCssTokenConcat(
-  left: mixed,
-  right: mixed,
+  parts: $ReadOnlyArray<mixed>,
 ): CssTokenEvaluationResult {
-  if (!isSeparatedCssTokenConcat(left, right)) {
+  const offsets = [];
+  let css = '';
+  for (const part of parts) {
+    if (isCssVarOrCalc(part)) {
+      offsets.push(css.length);
+      css += '0';
+    } else {
+      css += String(part);
+    }
+  }
+  if (offsets.length > 0 && !hasValidTokenBoundaries(css, offsets)) {
     return deopt(errMsgs.INVALID_CSS_VAR_CONCAT);
   }
-  return value(String(left) + String(right));
+  return value(parts.map((part) => String(part)).join(''));
 }
 
 export function evaluateCssTokenUnary(
@@ -251,7 +171,7 @@ export function evaluateCssTokenBinary(
       if (isStrictCalcTerm(left) && isStrictCalcTerm(right)) {
         return value(buildBinaryCalc(left, operator, right));
       }
-      return evaluateCssTokenConcat(left, right);
+      return evaluateCssTokenConcat([left, right]);
     case '-':
     case '*':
     case '/':
@@ -307,13 +227,4 @@ export function evaluateCssTokenCall(
   }
 
   return deopt(errMsgs.UNSUPPORTED_CSS_VAR_FUNCTION(calleeName));
-}
-
-export function evaluateCssTokenObjectKey(
-  key: mixed,
-): CssTokenEvaluationResult {
-  if (typeof key === 'string' && key.startsWith('calc(')) {
-    return deopt(errMsgs.INVALID_CALC_KEY);
-  }
-  return unhandled;
 }

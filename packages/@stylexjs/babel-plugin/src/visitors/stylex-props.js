@@ -231,13 +231,10 @@ export default function transformStylexProps(
         if (nonNullProps === true) {
           styleNonNullProps = true;
         } else {
-          const { confident, value: styleValue } = evaluate(
-            path,
-            state,
-            evaluatePathFnConfig,
-          );
+          const evaluation = evaluate(path, state, evaluatePathFnConfig);
+          const styleValue = evaluation.confident ? evaluation.value : null;
           if (
-            !confident ||
+            !evaluation.confident ||
             styleValue == null ||
             styleValue.__IS_PROXY === true
           ) {

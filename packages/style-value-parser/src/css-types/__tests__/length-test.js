@@ -47,9 +47,35 @@ describe('Test CSS Type: <length>', () => {
     expect(Length.parser.parse('12pt')).toEqual(new Length(12, 'pt'));
   });
 
+  test.each([
+    'pc',
+    'q',
+    'cap',
+    'rex',
+    'rch',
+    'rcap',
+    'ric',
+    'vb',
+    'vi',
+    'svb',
+    'svi',
+    'lvb',
+    'lvi',
+    'dvb',
+    'dvi',
+    'svmin',
+    'lvmin',
+    'dvmin',
+    'svmax',
+    'lvmax',
+    'dvmax',
+    'RCAP',
+  ])('parses modern and case-insensitive length unit %s', (unit) => {
+    expect(Length.parser.parseToEnd(`2${unit}`)).toEqual(new Length(2, unit));
+  });
+
   test('rejects invalid units', () => {
     expect(() => Length.parser.parseToEnd('10abc')).toThrow();
-    expect(() => Length.parser.parseToEnd('20pc')).toThrow();
     expect(() => Length.parser.parseToEnd('30')).toThrow();
     expect(() => Length.parser.parseToEnd('xyz')).toThrow();
   });

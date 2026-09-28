@@ -19,12 +19,9 @@ import {
 import { convertObjectToAST } from '../utils/js-to-ast';
 import { evaluate } from '../utils/evaluate-path';
 import path from 'node:path';
-import {
-  isCallTo,
-  validateDefineCall,
-  buildEvalConfig,
-  evaluationError,
-} from './visitor-utils';
+import { isCallTo, validateDefineCall, buildEvalConfig } from './visitor-utils';
+
+import { evaluationError } from '../utils/evaluation-result';
 
 /// Transforms `stylex.unstable_createThemeNested` calls.
 /// Validates, evaluates both arguments, delegates to the shared
@@ -66,20 +63,11 @@ export default function transformStyleXCreateThemeNested(
   const secondArg = args[1];
 
   // Evaluate first arg (the defineVarsNested result) without eval config
-  const {
-    confident: confident1,
-    value: variables,
-    reason: reason1,
-    deopt: deopt1,
-  } = evaluate(firstArg, state);
-  if (!confident1) {
-    throw evaluationError(
-      deopt1,
-      reason1,
-      callExpressionPath,
-      messages.nonStaticValue('unstable_createThemeNested'),
-    );
+  const evaluation1 = evaluate(firstArg, state);
+  if (!evaluation1.confident) {
+    throw evaluationError(evaluation1.error);
   }
+  const { value: variables } = evaluation1;
 
   // Check that first arg has __varGroupHash__ set
   if (
@@ -99,20 +87,14 @@ export default function transformStyleXCreateThemeNested(
     otherInjectedCSSRules,
   );
 
-  const {
-    confident: confident2,
-    value: overrides,
-    reason: reason2,
-    deopt: deopt2,
-  } = evaluate(secondArg, state, { identifiers, memberExpressions });
-  if (!confident2) {
-    throw evaluationError(
-      deopt2,
-      reason2,
-      callExpressionPath,
-      messages.nonStaticValue('unstable_createThemeNested'),
-    );
+  const evaluation2 = evaluate(secondArg, state, {
+    identifiers,
+    memberExpressions,
+  });
+  if (!evaluation2.confident) {
+    throw evaluationError(evaluation2.error);
   }
+  const { value: overrides } = evaluation2;
   if (typeof overrides !== 'object' || overrides == null) {
     throw callExpressionPath.buildCodeFrameError(
       messages.nonStyleObject('unstable_createThemeNested'),

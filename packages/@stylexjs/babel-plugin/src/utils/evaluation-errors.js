@@ -62,10 +62,6 @@ export const UNDEFINED_CONST = 'Referenced constant is not defined.';
 export const UNSUPPORTED_OPERATOR = (op: string): string =>
   `Unsupported operator: ${op}\n\n`;
 
-export type EvaluationErrorKind = 'css-token';
-
-export const CSS_TOKEN_ERROR: EvaluationErrorKind = 'css-token';
-
 export const UNSUPPORTED_CSS_VAR_OPERATOR = (op: string): string =>
   `The "${op}" operator cannot be applied to a StyleX variable or constant.
 Only +, -, * and / are supported and compile to a CSS calc() expression.\n\n`;
@@ -81,9 +77,6 @@ export const UNSUPPORTED_CSS_VAR_FUNCTION = (fnName: string): string =>
 Its value is a CSS variable reference that is only resolved in the browser.
 Use CSS calc() arithmetic directly instead.\n\n`;
 
-export const INVALID_CALC_KEY =
-  'Arithmetic on a StyleX variable or constant cannot be used as a style property key.\n\n';
-
 export const INVALID_CALC_OPERAND = (op: string): string =>
   `Arithmetic ("${op}") on a StyleX variable or constant requires the other operand
 to be a number, a numeric string with a CSS unit (e.g. '10px'), or another
@@ -93,10 +86,6 @@ export const INVALID_CSS_VAR_CONCAT = `Joining a StyleX variable or constant dir
 produce invalid CSS. For arithmetic, use numbers or other variables or
 constants (compiles to a CSS calc() expression). For a list of values,
 include an explicit separator, e.g. 'solid ' + token.\n\n`;
-
-export function isCssTokenErrorKind(reasonKind: ?EvaluationErrorKind): boolean {
-  return reasonKind === CSS_TOKEN_ERROR;
-}
 
 export const OBJECT_METHOD = 'Unsupported object method.\n\n';
 

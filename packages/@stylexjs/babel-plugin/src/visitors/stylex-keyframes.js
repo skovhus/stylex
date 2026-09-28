@@ -14,7 +14,7 @@ import * as t from '@babel/types';
 import StateManager from '../utils/state-manager';
 import { keyframes as stylexKeyframes, messages } from '../shared';
 import { evaluate } from '../utils/evaluate-path';
-import { evaluationError } from './visitor-utils';
+import { evaluationError } from '../utils/evaluation-result';
 import { firstThatWorks as stylexFirstThatWorks } from '../shared';
 
 /// This function looks for `stylex.keyframes` calls and transforms them.
@@ -84,18 +84,14 @@ export default function transformStyleXKeyframes(
     });
     state.applyStylexEnv(identifiers);
 
-    const { confident, value, reason, deopt } = evaluate(firstArg, state, {
+    const evaluation = evaluate(firstArg, state, {
       identifiers,
       memberExpressions,
     });
-    if (!confident) {
-      throw evaluationError(
-        deopt,
-        reason,
-        path,
-        messages.nonStaticValue('keyframes'),
-      );
+    if (!evaluation.confident) {
+      throw evaluationError(evaluation.error);
     }
+    const { value } = evaluation;
     const plainObject = value;
     assertValidKeyframes(path, plainObject);
     const [animationName, { ltr, priority, rtl }] = stylexKeyframes(

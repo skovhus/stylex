@@ -430,16 +430,96 @@ describe('arithmetic regression coverage', () => {
   });
 });
 
+describe('CSS validation at style boundaries', () => {
+  test.each([
+    [
+      'stylex.keyframes({ from: { [key]: 1 } })',
+      'cannot be used as a style property key',
+    ],
+    [
+      'stylex.keyframes({ [key]: { opacity: 1 } })',
+      'cannot be used as a style property key',
+    ],
+    [
+      'stylex.positionTry({ [key]: 1 })',
+      'Invalid property in `positionTry()` call',
+    ],
+    [
+      'stylex.viewTransitionClass({ old: { [key]: 1 } })',
+      'cannot be used as a style property key',
+    ],
+  ])(
+    'rejects arithmetic keys in other CSS consumers: %s',
+    (expression, message) => {
+      expect(() =>
+        transform(`
+        import * as stylex from '@stylexjs/stylex';
+        import { constants } from 'arithmetic.stylex';
+        const key = constants.a + 1;
+        export const result = ${expression};
+      `),
+      ).toThrow(message);
+    },
+  );
+
+  test.each([
+    'root: { [key]: 1 }',
+    'root: { ...{ [key]: 1 } }',
+    'root: { opacity: { default: 1, [key]: 0.5 } }',
+    'root: (value) => ({ [key]: value })',
+    'root: (value) => ({ ...{ [key]: 1 }, opacity: value })',
+  ])('rejects a calc-shaped key consumed as a style: %s', (namespace) => {
+    expect(() =>
+      transform(`
+      import * as stylex from '@stylexjs/stylex';
+      const key = 'calc(100% - 10px)';
+      export const styles = stylex.create({ ${namespace} });
+    `),
+    ).toThrow('cannot be used as a style property key');
+  });
+
+  test.each([
+    ['false && Math.round(constants.a)', 'false'],
+    ['true || Math.round(constants.a)', 'true'],
+    ['0 ?? Math.round(constants.a)', '0'],
+  ])(
+    'ignores failures on an unused logical branch: %s',
+    (expression, result) => {
+      expect(compile(`String(${expression})`)).toContain(`z-index:${result}`);
+    },
+  );
+
+  test.each([
+    '[Math.round(constants.a)][0]',
+    '({ value: Math.round(constants.a) }).value',
+    '((value) => Math.round(value))(constants.a)',
+  ])('retains a CSS failure in %s', (expression) => {
+    expect(() => compile(expression)).toThrow('Math.round');
+  });
+
+  test.each([
+    ['`"prefix ${constants.text} suffix"`', 'content'],
+    ['`url(${constants.url})`', 'backgroundImage'],
+    ['`[start ${constants.line} end] 1fr`', 'gridTemplateColumns'],
+    ["'\"' + constants.text + '\"'", 'content'],
+  ])('preserves interpolation context in %s', (expression, property) => {
+    expect(() => compile(expression, { property })).not.toThrow();
+  });
+});
+
 // Snapshot the final CSS after resolving imported constants, as well as the
 // diagnostic for an invalid interpolation, so these fixes can be reviewed directly.
 describe('arithmetic regression snapshots', () => {
-  function cssFor(body) {
+  function cssFor(body, setup = '') {
     const tokens = transform(
       `
       import * as stylex from '@stylexjs/stylex';
       export const constants = stylex.defineConsts({
         a: 26,
         gutter: '16px',
+        text: 'hello',
+        url: 'https://example.com/x.png',
+        line: 'sidebar',
       });
       export const variables = stylex.defineVars({ gap: '8px' });
     `,
@@ -450,6 +530,7 @@ describe('arithmetic regression snapshots', () => {
       import { constants, variables } from 'arithmetic.stylex';
       const gutter = constants.gutter;
       const local = constants.a;
+      ${setup}
       export const styles = stylex.create({ root: { ${body} } });
     `);
     return stylexPlugin.processStylexRules(
@@ -457,6 +538,64 @@ describe('arithmetic regression snapshots', () => {
       { useLayers: false },
     );
   }
+
+  test('calc-shaped keys in intermediate JavaScript lookup tables', () => {
+    expect(
+      cssFor(
+        'opacity: values[key]',
+        `
+      const key = 'calc(100% - 10px)';
+      const values = { [key]: 0.5 };
+    `,
+      ),
+    ).toMatchInlineSnapshot(`
+      ":root, .x1w9femo{--x1ez17s4:8px;}
+      .xbyyjgo:not(#\\#){opacity:.5}"
+    `);
+  });
+
+  test('imported constants inside quoted content', () => {
+    expect(cssFor('content: `"${constants.text}"`')).toMatchInlineSnapshot(`
+      ":root, .x1w9femo{--x1ez17s4:8px;}
+      .x1319nye:not(#\\#){content:"hello"}"
+    `);
+  });
+
+  test('imported constants inside quoted URLs', () => {
+    expect(cssFor('backgroundImage: `url("${constants.url}")`'))
+      .toMatchInlineSnapshot(`
+      ":root, .x1w9femo{--x1ez17s4:8px;}
+      .x1xmaqyp:not(#\\#){background-image:url("https://example.com/x.png")}"
+    `);
+  });
+
+  test('imported constants inside grid line brackets', () => {
+    expect(cssFor('gridTemplateColumns: `[${constants.line}] 1fr`'))
+      .toMatchInlineSnapshot(`
+      ":root, .x1w9femo{--x1ez17s4:8px;}
+      .x1w9nni0:not(#\\#){grid-template-columns:[sidebar] 1fr}"
+    `);
+  });
+
+  test('CSS failures retain the original expression through an arrow helper', () => {
+    expect(() =>
+      compile('round(constants.a)', {
+        setup: 'const round = (value) => Math.round(value);',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      "/src/main.js: The "Math.round" function cannot be applied to a StyleX variable or constant at compile time.
+      Its value is a CSS variable reference that is only resolved in the browser.
+      Use CSS calc() arithmetic directly instead.
+
+
+        2 |     import * as stylex from '@stylexjs/stylex';
+        3 |     import { constants, variables } from 'arithmetic.stylex';
+      > 4 |     const round = (value) => Math.round(value);
+          |                              ^^^^^^^^^^^^^^^^^
+        5 |     export const styles = stylex.create({ root: { zIndex: round(constants.a) } });
+        6 |   "
+    `);
+  });
 
   test('slash-separated imported constants and variables in templates', () => {
     expect(cssFor('borderRadius: `${gutter}/${variables.gap}`'))

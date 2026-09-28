@@ -14,7 +14,7 @@ import * as t from '@babel/types';
 import StateManager from '../utils/state-manager';
 import styleXPositionTry from '../shared/stylex-position-try';
 import { evaluate } from '../utils/evaluate-path';
-import { evaluationError } from './visitor-utils';
+import { evaluationError } from '../utils/evaluation-result';
 import { firstThatWorks as stylexFirstThatWorks } from '../shared';
 import * as messages from '../shared/messages';
 
@@ -79,18 +79,14 @@ export default function transformStyleXPositionTry(
     });
     state.applyStylexEnv(identifiers);
 
-    const { confident, value, reason, deopt } = evaluate(firstArgPath, state, {
+    const evaluation = evaluate(firstArgPath, state, {
       identifiers,
       memberExpressions,
     });
-    if (!confident) {
-      throw evaluationError(
-        deopt,
-        reason,
-        callExpressionPath,
-        messages.nonStaticValue('positionTry'),
-      );
+    if (!evaluation.confident) {
+      throw evaluationError(evaluation.error);
     }
+    const { value } = evaluation;
     const plainObject = value;
     assertValidPositionTry(firstArgPath, plainObject);
     assertValidProperties(firstArgPath, plainObject);

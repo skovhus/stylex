@@ -9,8 +9,7 @@
  * Shared visitor helpers. `isCallTo`, `validateDefineCall`, and
  * `buildEvalConfig` extract common patterns across the 3 nested visitors
  * (unstable_defineVarsNested / unstable_defineConstsNested /
- * unstable_createThemeNested); `evaluationError` is shared by all visitors
- * that evaluate their arguments statically.
+ * unstable_createThemeNested).
  */
 
 import type { NodePath } from '@babel/traverse';
@@ -26,23 +25,6 @@ import {
   types as stylexTypes,
 } from '../shared';
 import { isVariableNamedExported } from '../utils/ast-helpers';
-
-/**
- * Builds the error to throw when a StyleX API argument fails static
- * evaluation: prefers the evaluator's specific deopt reason and location,
- * falling back to the generic message at the API call site.
- */
-export function evaluationError(
-  deopt: ?NodePath<>,
-  reason: ?string,
-  fallbackPath: NodePath<>,
-  fallbackMessage: string,
-): Error {
-  return (deopt ?? fallbackPath).buildCodeFrameError(
-    reason ?? fallbackMessage,
-    SyntaxError,
-  );
-}
 
 /**
  * Detects if a CallExpression matches a StyleX API call.
