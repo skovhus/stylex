@@ -66,6 +66,10 @@ export const UNSUPPORTED_CSS_VAR_OPERATOR = (op: string): string =>
   `The "${op}" operator cannot be applied to a StyleX variable or constant.
 Only +, -, * and / are supported and compile to a CSS calc() expression.\n\n`;
 
+export const UNSUPPORTED_CSS_VAR_CONDITION = `A StyleX variable or constant cannot be used as a condition at compile time.
+Its truthiness cannot be determined from a CSS variable reference or calc() expression.
+Branch on a plain JavaScript value instead.\n\n`;
+
 export const UNSUPPORTED_CSS_VAR_COMPARISON = (op: string): string =>
   `A StyleX variable or constant cannot be compared with "${op}" at compile time.
 Its value is a CSS variable reference that is only resolved in the browser.

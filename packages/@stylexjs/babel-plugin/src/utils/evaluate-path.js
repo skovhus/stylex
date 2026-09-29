@@ -36,6 +36,7 @@ import {
   evaluateCssTokenBinary,
   evaluateCssTokenCall,
   evaluateCssTokenConcat,
+  evaluateCssTokenCondition,
   evaluateCssTokenUnary,
 } from './css-calc';
 import fs from 'node:fs';
@@ -378,6 +379,15 @@ function applyCssTokenEvaluation(
   return undefined;
 }
 
+function evaluateCondition(path: NodePath<>, state: State): mixed {
+  const value = evaluateCached(path, state);
+  if (state.error != null) return;
+  const result = evaluateCssTokenCondition(value);
+  return result.type === 'unhandled'
+    ? value
+    : applyCssTokenEvaluation(result, path, state);
+}
+
 function evaluateImportedFile(
   filePath: string,
   namedExport: string,
@@ -600,7 +610,7 @@ function _evaluate(path: NodePath<>, state: State): any {
   }
 
   if (path.isConditionalExpression()) {
-    const testResult = evaluateCached(path.get('test'), state);
+    const testResult = evaluateCondition(path.get('test'), state);
     if (state.error != null) return;
     if (testResult) {
       return evaluateCached(path.get('consequent'), state);
@@ -957,7 +967,12 @@ function _evaluate(path: NodePath<>, state: State): any {
   }
 
   if (path.isLogicalExpression()) {
-    const left = evaluateCached(path.get('left'), state);
+    // Nullish coalescing does not inspect truthiness; token references retain
+    // their existing non-nullish behavior.
+    const left =
+      path.node.operator === '??'
+        ? evaluateCached(path.get('left'), state)
+        : evaluateCondition(path.get('left'), state);
     if (state.error != null) return;
 
     // Evaluate only the branch JavaScript would use. Unused branches must not

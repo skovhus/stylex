@@ -147,10 +147,21 @@ export function evaluateCssTokenUnary(
     case '!':
     case '+':
     case '~':
+    case 'typeof':
       return deopt(errMsgs.UNSUPPORTED_CSS_VAR_OPERATOR(operator));
     default:
       return unhandled;
   }
+}
+
+export function evaluateCssTokenCondition(
+  arg: mixed,
+): CssTokenEvaluationResult {
+  // Treat var()/calc() strings as opaque, including literal spellings, just as
+  // arithmetic and comparisons do elsewhere in this evaluator.
+  return isCssVarOrCalc(arg)
+    ? deopt(errMsgs.UNSUPPORTED_CSS_VAR_CONDITION)
+    : unhandled;
 }
 
 export function evaluateCssTokenBinary(

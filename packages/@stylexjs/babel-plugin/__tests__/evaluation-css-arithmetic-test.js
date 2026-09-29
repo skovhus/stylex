@@ -430,6 +430,174 @@ describe('arithmetic regression coverage', () => {
   });
 });
 
+describe('CSS tokens in JavaScript conditions', () => {
+  test.each([
+    ['imported constant', 'constants.a', ''],
+    ['imported variable', 'variables.gap', ''],
+    ['literal CSS variable', "'var(--gap)'", ''],
+    ['literal CSS calculation', "'calc(1)'", ''],
+    ['local alias', 'local', 'const local = constants.a;'],
+    ['alias chain', 'local', 'const first = constants.a; const local = first;'],
+    ['arithmetic', '(constants.a * 2)', ''],
+    ['zero-valued arithmetic', '(constants.b - constants.b)', ''],
+    ['arithmetic alias', 'local', 'const local = constants.a * 2;'],
+    ['object lookup', 'local.value', 'const local = { value: constants.a };'],
+    ['array lookup', 'local[0]', 'const local = [constants.a];'],
+    [
+      'arrow helper',
+      'identity(constants.a)',
+      'const identity = (value) => value;',
+    ],
+    [
+      'arrow-helper predicate',
+      'choose(constants.a)',
+      'const choose = (value) => value ? 1 : 0;',
+    ],
+    ['nested logical result', '(true && constants.a)', ''],
+    ['nested ternary result', '(true ? constants.a : 0)', ''],
+    ['Number conversion', 'Number(constants.a)', ''],
+    ['String conversion', 'String(constants.a)', ''],
+  ])('rejects %s when deciding a branch', (_name, condition, setup) => {
+    for (const expression of [
+      `${condition} ? 1 : 0`,
+      `${condition} && 0.5`,
+      `${condition} || 0.5`,
+    ]) {
+      expect(() => compile(expression, { setup })).toThrow(
+        'cannot be used as a condition at compile time',
+      );
+    }
+  });
+
+  test.each(['constants.a', 'constants.a * 2', 'local'])(
+    'rejects typeof on %s',
+    (expression) => {
+      expect(() =>
+        compile(`typeof (${expression}) === 'number' ? 1 : 0`, {
+          setup: 'const local = constants.a * 2;',
+        }),
+      ).toThrow('"typeof" operator cannot be applied');
+    },
+  );
+
+  test.each([
+    'constants.a ? opacity : 0',
+    'constants.a && opacity',
+    'constants.a || opacity',
+    "typeof constants.a === 'number' ? opacity : 0",
+  ])('rejects token coercion in a dynamic style: %s', (expression) => {
+    expect(() =>
+      transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants } from 'arithmetic.stylex';
+      export const styles = stylex.create({
+        root: (opacity) => ({ opacity: ${expression} }),
+      });
+    `),
+    ).toThrow(
+      /cannot be used as a condition|"typeof" operator cannot be applied/,
+    );
+  });
+
+  test.each([
+    'true ? constants.a : 0',
+    'false ? 0 : constants.a',
+    'true && constants.a',
+    'false || constants.a',
+    'constants.a ?? 0',
+    'null ?? constants.a',
+  ])('allows a reference selected by a known condition: %s', (expression) => {
+    expect(compile(expression)).toContain(`z-index:${a}`);
+  });
+
+  test.each([
+    ['false && (constants.a ? 1 : 0)', 'false'],
+    ['true || (constants.a && 0.5)', 'true'],
+    ['0 ?? (constants.a || 0.5)', '0'],
+    ['true ? 1 : typeof constants.a', '1'],
+    ['false ? (constants.a ? 1 : 0) : 0', '0'],
+    ['0 ? 1 : 0', '0'],
+    ['0 || 0.5', '.5'],
+    ['0 && 0.5', '0'],
+    ["typeof (2 * 0) === 'number' ? 1 : 0", '1'],
+  ])('preserves ordinary and unused conditions: %s', (expression, expected) => {
+    expect(compile(`String(${expression})`)).toContain(`z-index:${expected}`);
+  });
+
+  test('snapshots direct imported constant in a ternary condition', () => {
+    expect(() =>
+      compile('constants.a ? 1 : fallback', { setup: 'const fallback = 0;' }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
+      Its truthiness cannot be determined from a CSS variable reference or calc() expression.
+      Branch on a plain JavaScript value instead.
+
+
+        3 |     import { constants, variables } from 'arithmetic.stylex';
+        4 |     const fallback = 0;
+      > 5 |     export const styles = stylex.create({ root: { zIndex: constants.a ? 1 : fallback } });
+          |                                                           ^^^^^^^^^^^
+        6 |   "
+    `);
+  });
+
+  test('snapshots an arithmetic alias used with &&', () => {
+    expect(() =>
+      compile('local && 0.5', {
+        setup: 'const local = constants.a * 2;',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
+      Its truthiness cannot be determined from a CSS variable reference or calc() expression.
+      Branch on a plain JavaScript value instead.
+
+
+        3 |     import { constants, variables } from 'arithmetic.stylex';
+        4 |     const local = constants.a * 2;
+      > 5 |     export const styles = stylex.create({ root: { zIndex: local && 0.5 } });
+          |                                                           ^^^^^
+        6 |   "
+    `);
+  });
+
+  test('snapshots an imported alias used with ||', () => {
+    expect(() =>
+      compile('local || 0.5', {
+        setup: 'const local = constants.a;',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
+      Its truthiness cannot be determined from a CSS variable reference or calc() expression.
+      Branch on a plain JavaScript value instead.
+
+
+        3 |     import { constants, variables } from 'arithmetic.stylex';
+        4 |     const local = constants.a;
+      > 5 |     export const styles = stylex.create({ root: { zIndex: local || 0.5 } });
+          |                                                           ^^^^^
+        6 |   "
+    `);
+  });
+
+  test('snapshots typeof on imported arithmetic', () => {
+    expect(() =>
+      compile("typeof local === 'number' ? 1 : 0", {
+        setup: 'const local = constants.a * 2;',
+      }),
+    ).toThrowErrorMatchingInlineSnapshot(`
+      "/src/main.js: The "typeof" operator cannot be applied to a StyleX variable or constant.
+      Only +, -, * and / are supported and compile to a CSS calc() expression.
+
+
+        3 |     import { constants, variables } from 'arithmetic.stylex';
+        4 |     const local = constants.a * 2;
+      > 5 |     export const styles = stylex.create({ root: { zIndex: typeof local === 'number' ? 1 : 0 } });
+          |                                                           ^^^^^^^^^^^^
+        6 |   "
+    `);
+  });
+});
+
 describe('CSS validation at style boundaries', () => {
   test.each([
     [
