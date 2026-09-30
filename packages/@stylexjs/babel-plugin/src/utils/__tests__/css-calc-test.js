@@ -85,14 +85,23 @@ describe('buildBinaryCalc', () => {
     );
   });
 
-  test.each([0.00001, 1e-10, Number.MAX_VALUE])(
-    'preserves the finite divisor %s',
-    (divisor) => {
-      expect(buildBinaryCalc('var(--a)', '/', divisor)).toBe(
-        `calc(var(--a) / ${String(divisor)})`,
-      );
-    },
-  );
+  test('preserves the finite divisor 0.00001', () => {
+    expect(buildBinaryCalc('var(--a)', '/', 0.00001)).toBe(
+      'calc(var(--a) / 0.00001)',
+    );
+  });
+
+  test('preserves the finite divisor 1e-10', () => {
+    expect(buildBinaryCalc('var(--a)', '/', 1e-10)).toBe(
+      'calc(var(--a) / 1e-10)',
+    );
+  });
+
+  test('preserves the finite divisor Number.MAX_VALUE', () => {
+    expect(buildBinaryCalc('var(--a)', '/', Number.MAX_VALUE)).toBe(
+      'calc(var(--a) / 1.7976931348623157e+308)',
+    );
+  });
 
   test('strips nested calc() operands down to parens', () => {
     expect(buildBinaryCalc('calc(var(--a) + var(--b))', '*', 2)).toBe(

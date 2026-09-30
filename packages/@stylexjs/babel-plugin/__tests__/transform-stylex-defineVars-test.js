@@ -606,9 +606,18 @@ describe('@stylexjs/babel-plugin', () => {
         });
       `);
 
-      expect(metadata.stylex[0][1].ltr).toContain(
-        '--x1gpkec6:calc(var(--x1kbodq4) * 2)',
-      );
+      expect(metadata.stylex).toMatchInlineSnapshot(`
+        [
+          [
+            "xrx2rik",
+            {
+              "ltr": ":root, .xrx2rik{--x1kbodq4:8px;--x1gpkec6:calc(var(--x1kbodq4) * 2);}",
+              "rtl": null,
+            },
+            0.1,
+          ],
+        ]
+      `);
     });
 
     test('same-group references can point to later keys', () => {

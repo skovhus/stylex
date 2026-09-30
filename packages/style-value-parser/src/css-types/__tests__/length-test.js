@@ -47,31 +47,108 @@ describe('Test CSS Type: <length>', () => {
     expect(Length.parser.parse('12pt')).toEqual(new Length(12, 'pt'));
   });
 
-  test.each([
-    'pc',
-    'q',
-    'cap',
-    'rex',
-    'rch',
-    'rcap',
-    'ric',
-    'vb',
-    'vi',
-    'svb',
-    'svi',
-    'lvb',
-    'lvi',
-    'dvb',
-    'dvi',
-    'svmin',
-    'lvmin',
-    'dvmin',
-    'svmax',
-    'lvmax',
-    'dvmax',
-    'RCAP',
-  ])('parses modern and case-insensitive length unit %s', (unit) => {
-    expect(Length.parser.parseToEnd(`2${unit}`)).toEqual(new Length(2, unit));
+  test('parses modern and case-insensitive length unit pc', () => {
+    expect(Length.parser.parseToEnd(`2${'pc'}`)).toEqual(new Length(2, 'pc'));
+  });
+
+  test('parses modern and case-insensitive length unit q', () => {
+    expect(Length.parser.parseToEnd(`2${'q'}`)).toEqual(new Length(2, 'q'));
+  });
+
+  test('parses modern and case-insensitive length unit cap', () => {
+    expect(Length.parser.parseToEnd(`2${'cap'}`)).toEqual(new Length(2, 'cap'));
+  });
+
+  test('parses modern and case-insensitive length unit rex', () => {
+    expect(Length.parser.parseToEnd(`2${'rex'}`)).toEqual(new Length(2, 'rex'));
+  });
+
+  test('parses modern and case-insensitive length unit rch', () => {
+    expect(Length.parser.parseToEnd(`2${'rch'}`)).toEqual(new Length(2, 'rch'));
+  });
+
+  test('parses modern and case-insensitive length unit rcap', () => {
+    expect(Length.parser.parseToEnd(`2${'rcap'}`)).toEqual(
+      new Length(2, 'rcap'),
+    );
+  });
+
+  test('parses modern and case-insensitive length unit ric', () => {
+    expect(Length.parser.parseToEnd(`2${'ric'}`)).toEqual(new Length(2, 'ric'));
+  });
+
+  test('parses modern and case-insensitive length unit vb', () => {
+    expect(Length.parser.parseToEnd(`2${'vb'}`)).toEqual(new Length(2, 'vb'));
+  });
+
+  test('parses modern and case-insensitive length unit vi', () => {
+    expect(Length.parser.parseToEnd(`2${'vi'}`)).toEqual(new Length(2, 'vi'));
+  });
+
+  test('parses modern and case-insensitive length unit svb', () => {
+    expect(Length.parser.parseToEnd(`2${'svb'}`)).toEqual(new Length(2, 'svb'));
+  });
+
+  test('parses modern and case-insensitive length unit svi', () => {
+    expect(Length.parser.parseToEnd(`2${'svi'}`)).toEqual(new Length(2, 'svi'));
+  });
+
+  test('parses modern and case-insensitive length unit lvb', () => {
+    expect(Length.parser.parseToEnd(`2${'lvb'}`)).toEqual(new Length(2, 'lvb'));
+  });
+
+  test('parses modern and case-insensitive length unit lvi', () => {
+    expect(Length.parser.parseToEnd(`2${'lvi'}`)).toEqual(new Length(2, 'lvi'));
+  });
+
+  test('parses modern and case-insensitive length unit dvb', () => {
+    expect(Length.parser.parseToEnd(`2${'dvb'}`)).toEqual(new Length(2, 'dvb'));
+  });
+
+  test('parses modern and case-insensitive length unit dvi', () => {
+    expect(Length.parser.parseToEnd(`2${'dvi'}`)).toEqual(new Length(2, 'dvi'));
+  });
+
+  test('parses modern and case-insensitive length unit svmin', () => {
+    expect(Length.parser.parseToEnd(`2${'svmin'}`)).toEqual(
+      new Length(2, 'svmin'),
+    );
+  });
+
+  test('parses modern and case-insensitive length unit lvmin', () => {
+    expect(Length.parser.parseToEnd(`2${'lvmin'}`)).toEqual(
+      new Length(2, 'lvmin'),
+    );
+  });
+
+  test('parses modern and case-insensitive length unit dvmin', () => {
+    expect(Length.parser.parseToEnd(`2${'dvmin'}`)).toEqual(
+      new Length(2, 'dvmin'),
+    );
+  });
+
+  test('parses modern and case-insensitive length unit svmax', () => {
+    expect(Length.parser.parseToEnd(`2${'svmax'}`)).toEqual(
+      new Length(2, 'svmax'),
+    );
+  });
+
+  test('parses modern and case-insensitive length unit lvmax', () => {
+    expect(Length.parser.parseToEnd(`2${'lvmax'}`)).toEqual(
+      new Length(2, 'lvmax'),
+    );
+  });
+
+  test('parses modern and case-insensitive length unit dvmax', () => {
+    expect(Length.parser.parseToEnd(`2${'dvmax'}`)).toEqual(
+      new Length(2, 'dvmax'),
+    );
+  });
+
+  test('parses modern and case-insensitive length unit RCAP', () => {
+    expect(Length.parser.parseToEnd(`2${'RCAP'}`)).toEqual(
+      new Length(2, 'RCAP'),
+    );
   });
 
   test('rejects invalid units', () => {

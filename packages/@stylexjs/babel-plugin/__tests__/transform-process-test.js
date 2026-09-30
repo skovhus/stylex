@@ -151,6 +151,52 @@ export const styles = stylex.create({
 });
 `;
 
+function transformCrossFile(mainSource) {
+  const pluginOpts = {
+    debug: true,
+    unstable_moduleResolution: { type: 'haste' },
+  };
+
+  const tokens = transformSync(
+    `
+    import * as stylex from '@stylexjs/stylex';
+    export const consts = stylex.defineConsts({
+      A: 26,
+      B: 14,
+      D: 6,
+      gutter: '16px',
+    });
+    export const vars = stylex.defineVars({
+      gap: '8px',
+    });
+    `,
+    {
+      filename: '/src/app/constants.stylex.js',
+      parserOpts: { flow: 'all' },
+      babelrc: false,
+      plugins: [[stylexPlugin, pluginOpts]],
+    },
+  );
+
+  const main = transformSync(mainSource, {
+    filename: '/src/app/main.js',
+    parserOpts: { flow: 'all' },
+    babelrc: false,
+    plugins: [[stylexPlugin, pluginOpts]],
+  });
+
+  const metadata = [
+    ...(tokens.metadata.stylex || []),
+    ...(main.metadata.stylex || []),
+  ];
+
+  return {
+    code: main.code,
+    metadata: main.metadata.stylex,
+    css: stylexPlugin.processStylexRules(metadata, { useLayers: false }),
+  };
+}
+
 describe('@stylexjs/babel-plugin', () => {
   describe('[transform] stylexPlugin.processStylexRules', () => {
     test('no rules', () => {
@@ -2010,54 +2056,8 @@ describe('@stylexjs/babel-plugin', () => {
   });
 
   describe('[transform] arithmetic on imported defineConsts (#1597)', () => {
-    function transformCrossFile(mainSource) {
-      const pluginOpts = {
-        debug: true,
-        enableDebugClassNames: true,
-        unstable_moduleResolution: { type: 'haste' },
-      };
-
-      const tokens = transformSync(
-        `
-        import * as stylex from '@stylexjs/stylex';
-        export const consts = stylex.defineConsts({
-          A: 26,
-          B: 14,
-          D: 6,
-          gutter: '16px',
-        });
-        export const vars = stylex.defineVars({
-          gap: '8px',
-        });
-        `,
-        {
-          filename: '/src/app/constants.stylex.js',
-          parserOpts: { flow: 'all' },
-          babelrc: false,
-          plugins: [[stylexPlugin, pluginOpts]],
-        },
-      );
-
-      const main = transformSync(mainSource, {
-        filename: '/src/app/main.js',
-        parserOpts: { flow: 'all' },
-        babelrc: false,
-        plugins: [[stylexPlugin, pluginOpts]],
-      });
-
-      const metadata = [
-        ...(tokens.metadata.stylex || []),
-        ...(main.metadata.stylex || []),
-      ];
-
-      return {
-        code: main.code,
-        css: stylexPlugin.processStylexRules(metadata, { useLayers: false }),
-      };
-    }
-
     test('numeric const arithmetic resolves to calc() with literal values', () => {
-      const { code, css } = transformCrossFile(`
+      const { code, metadata, css } = transformCrossFile(`
         import * as stylex from '@stylexjs/stylex';
         import { consts } from 'constants.stylex';
         export const styles = stylex.create({
@@ -2073,21 +2073,41 @@ describe('@stylexjs/babel-plugin', () => {
         import { consts } from 'constants.stylex';
         export const styles = {
           box: {
-            "zIndex-kY2c9j": "zIndex-x12qy7zi",
-            "opacity-kSiTet": "opacity-xzgd8mq",
+            "zIndex-kY2c9j": "xu5ayhs",
+            "opacity-kSiTet": "xmwhyq",
             $$css: "main.js:5"
           }
         };"
       `);
+      expect(metadata).toMatchInlineSnapshot(`
+        [
+          [
+            "xu5ayhs",
+            {
+              "ltr": ".xu5ayhs{z-index:calc((var(--x1mbt1x4) + var(--x11hi5e1)) - var(--x1ebg0db))}",
+              "rtl": null,
+            },
+            3000,
+          ],
+          [
+            "xmwhyq",
+            {
+              "ltr": ".xmwhyq{opacity:calc(var(--x1mbt1x4) / 4)}",
+              "rtl": null,
+            },
+            3000,
+          ],
+        ]
+      `);
       expect(css).toMatchInlineSnapshot(`
-        ":root, .x1c5qe6w{--gap-x1aqc7en:8px;}
-        .opacity-xzgd8mq:not(#\\#){opacity:calc(26 / 4)}
-        .zIndex-x12qy7zi:not(#\\#){z-index:calc((26 + 14) - 6)}"
+        ":root, .x1c5qe6w{--x1aqc7en:8px;}
+        .xmwhyq:not(#\\#){opacity:calc(26 / 4)}
+        .xu5ayhs:not(#\\#){z-index:calc((26 + 14) - 6)}"
       `);
     });
 
     test('unit const arithmetic stays as calc() with substituted values', () => {
-      const { code, css } = transformCrossFile(`
+      const { code, metadata, css } = transformCrossFile(`
         import * as stylex from '@stylexjs/stylex';
         import { consts } from 'constants.stylex';
         export const styles = stylex.create({
@@ -2102,19 +2122,31 @@ describe('@stylexjs/babel-plugin', () => {
         import { consts } from 'constants.stylex';
         export const styles = {
           box: {
-            "paddingTop-kLKAdn": "paddingTop-x89uyba",
+            "paddingTop-kLKAdn": "xjttrvz",
             $$css: "main.js:5"
           }
         };"
       `);
+      expect(metadata).toMatchInlineSnapshot(`
+        [
+          [
+            "xjttrvz",
+            {
+              "ltr": ".xjttrvz{padding-top:calc(var(--xdzomaw) * 2)}",
+              "rtl": null,
+            },
+            4000,
+          ],
+        ]
+      `);
       expect(css).toMatchInlineSnapshot(`
-        ":root, .x1c5qe6w{--gap-x1aqc7en:8px;}
-        .paddingTop-x89uyba:not(#\\#){padding-top:calc(16px * 2)}"
+        ":root, .x1c5qe6w{--x1aqc7en:8px;}
+        .xjttrvz:not(#\\#){padding-top:calc(16px * 2)}"
       `);
     });
 
     test('mixed const and defineVars arithmetic keeps the var() in calc()', () => {
-      const { code, css } = transformCrossFile(`
+      const { code, metadata, css } = transformCrossFile(`
         import * as stylex from '@stylexjs/stylex';
         import { consts, vars } from 'constants.stylex';
         export const styles = stylex.create({
@@ -2129,19 +2161,31 @@ describe('@stylexjs/babel-plugin', () => {
         import { consts, vars } from 'constants.stylex';
         export const styles = {
           box: {
-            "marginTop-keoZOQ": "marginTop-x1dsisy3",
+            "marginTop-keoZOQ": "x1drh8op",
             $$css: "main.js:5"
           }
         };"
       `);
+      expect(metadata).toMatchInlineSnapshot(`
+        [
+          [
+            "x1drh8op",
+            {
+              "ltr": ".x1drh8op{margin-top:calc(var(--x1mbt1x4) * var(--x1aqc7en))}",
+              "rtl": null,
+            },
+            4000,
+          ],
+        ]
+      `);
       expect(css).toMatchInlineSnapshot(`
-        ":root, .x1c5qe6w{--gap-x1aqc7en:8px;}
-        .marginTop-x1dsisy3:not(#\\#){margin-top:calc(26 * var(--gap-x1aqc7en))}"
+        ":root, .x1c5qe6w{--x1aqc7en:8px;}
+        .x1drh8op:not(#\\#){margin-top:calc(26 * var(--x1aqc7en))}"
       `);
     });
 
     test('Number() wrapped const arithmetic in a local constant resolves to calc()', () => {
-      const { code, css } = transformCrossFile(`
+      const { code, metadata, css } = transformCrossFile(`
         import * as stylex from '@stylexjs/stylex';
         import { consts } from 'constants.stylex';
         const PRESENTER_Z_INDEX = Number(consts.A) + 1;
@@ -2158,14 +2202,26 @@ describe('@stylexjs/babel-plugin', () => {
         const PRESENTER_Z_INDEX = Number(consts.A) + 1;
         export const styles = {
           box: {
-            "zIndex-kY2c9j": "zIndex-xd3ywn4",
+            "zIndex-kY2c9j": "xcpe9wl",
             $$css: "main.js:6"
           }
         };"
       `);
+      expect(metadata).toMatchInlineSnapshot(`
+        [
+          [
+            "xcpe9wl",
+            {
+              "ltr": ".xcpe9wl{z-index:calc(var(--x1mbt1x4) + 1)}",
+              "rtl": null,
+            },
+            3000,
+          ],
+        ]
+      `);
       expect(css).toMatchInlineSnapshot(`
-        ":root, .x1c5qe6w{--gap-x1aqc7en:8px;}
-        .zIndex-xd3ywn4:not(#\\#){z-index:calc(26 + 1)}"
+        ":root, .x1c5qe6w{--x1aqc7en:8px;}
+        .xcpe9wl:not(#\\#){z-index:calc(26 + 1)}"
       `);
     });
   });
