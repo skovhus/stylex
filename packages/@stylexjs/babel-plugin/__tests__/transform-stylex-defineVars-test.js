@@ -598,7 +598,7 @@ describe('@stylexjs/babel-plugin', () => {
     });
 
     test('arithmetic on same-group references compiles to calc()', () => {
-      const { metadata } = transform(`
+      const { code, metadata } = transform(`
         import * as stylex from '@stylexjs/stylex';
         export const layout = stylex.defineVars({
           gap: '8px',
@@ -606,6 +606,14 @@ describe('@stylexjs/babel-plugin', () => {
         });
       `);
 
+      expect(code).toMatchInlineSnapshot(`
+        "import * as stylex from '@stylexjs/stylex';
+        export const layout = {
+          gap: "var(--x1kbodq4)",
+          doubleGap: "var(--x1gpkec6)",
+          __varGroupHash__: "xrx2rik"
+        };"
+      `);
       expect(metadata.stylex).toMatchInlineSnapshot(`
         [
           [

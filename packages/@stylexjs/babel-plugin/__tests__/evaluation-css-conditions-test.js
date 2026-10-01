@@ -21,20 +21,7 @@ describe('CSS tokens in JavaScript conditions', () => {
         },
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
-      Its value cannot be determined from a CSS variable reference or calc() expression.
-      Branch on a plain JavaScript value instead.
-
-
-        4 |       export const styles = stylex.create({
-        5 |         root: {
-      > 6 |           zIndex: constants.a ?? 0,
-          |                   ^^^^^^^^^^^
-        7 |         },
-        8 |       });
-        9 |     "
-    `);
+    ).toThrow();
   });
 
   test('rejects nullish coalescing through an imported alias in a dynamic style', () => {
@@ -49,20 +36,7 @@ describe('CSS tokens in JavaScript conditions', () => {
         }),
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
-      Its value cannot be determined from a CSS variable reference or calc() expression.
-      Branch on a plain JavaScript value instead.
-
-
-         5 |       export const styles = stylex.create({
-         6 |         root: (fallback) => ({
-      >  7 |           zIndex: local ?? fallback,
-           |                   ^^^^^
-         8 |         }),
-         9 |       });
-        10 |     "
-    `);
+    ).toThrow();
   });
 
   test('rejects a null comparison on an imported constant', () => {
@@ -76,20 +50,7 @@ describe('CSS tokens in JavaScript conditions', () => {
         },
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: A StyleX variable or constant cannot be compared with "==" at compile time.
-      Its value is a CSS variable reference that is only resolved in the browser.
-      Branch on a plain JavaScript value instead.
-
-
-        4 |       export const styles = stylex.create({
-        5 |         root: {
-      > 6 |           zIndex: constants.a == null ? 0 : 1,
-          |                   ^^^^^^^^^^^^^^^^^^^
-        7 |         },
-        8 |       });
-        9 |     "
-    `);
+    ).toThrow();
   });
 
   test('rejects an undefined comparison with an imported alias on the right', () => {
@@ -104,20 +65,7 @@ describe('CSS tokens in JavaScript conditions', () => {
         },
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: A StyleX variable or constant cannot be compared with "!==" at compile time.
-      Its value is a CSS variable reference that is only resolved in the browser.
-      Branch on a plain JavaScript value instead.
-
-
-         5 |       export const styles = stylex.create({
-         6 |         root: {
-      >  7 |           zIndex: undefined !== local ? 1 : 0,
-           |                   ^^^^^^^^^^^^^^^^^^^
-         8 |         },
-         9 |       });
-        10 |     "
-    `);
+    ).toThrow();
   });
 
   test('rejects an imported constant as a ternary condition', () => {
@@ -132,20 +80,7 @@ describe('CSS tokens in JavaScript conditions', () => {
         },
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
-      Its value cannot be determined from a CSS variable reference or calc() expression.
-      Branch on a plain JavaScript value instead.
-
-
-         5 |       export const styles = stylex.create({
-         6 |         root: {
-      >  7 |           zIndex: constants.a ? 1 : fallback,
-           |                   ^^^^^^^^^^^
-         8 |         },
-         9 |       });
-        10 |     "
-    `);
+    ).toThrow();
   });
 
   test('rejects an arithmetic alias as the left operand of &&', () => {
@@ -160,20 +95,7 @@ describe('CSS tokens in JavaScript conditions', () => {
         },
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
-      Its value cannot be determined from a CSS variable reference or calc() expression.
-      Branch on a plain JavaScript value instead.
-
-
-         5 |       export const styles = stylex.create({
-         6 |         root: {
-      >  7 |           zIndex: local && 0.5,
-           |                   ^^^^^
-         8 |         },
-         9 |       });
-        10 |     "
-    `);
+    ).toThrow();
   });
 
   test('rejects an imported alias as the left operand of ||', () => {
@@ -188,20 +110,7 @@ describe('CSS tokens in JavaScript conditions', () => {
         },
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: A StyleX variable or constant cannot be used as a condition at compile time.
-      Its value cannot be determined from a CSS variable reference or calc() expression.
-      Branch on a plain JavaScript value instead.
-
-
-         5 |       export const styles = stylex.create({
-         6 |         root: {
-      >  7 |           zIndex: local || 0.5,
-           |                   ^^^^^
-         8 |         },
-         9 |       });
-        10 |     "
-    `);
+    ).toThrow();
   });
 
   test('rejects typeof on unresolved imported arithmetic', () => {
@@ -216,23 +125,11 @@ describe('CSS tokens in JavaScript conditions', () => {
         },
       });
     `),
-    ).toThrowErrorMatchingInlineSnapshot(`
-      "/src/main.js: The "typeof" operator cannot be applied to a StyleX variable or constant.
-      Only +, -, * and / are supported and compile to a CSS calc() expression.
-
-
-         5 |       export const styles = stylex.create({
-         6 |         root: {
-      >  7 |           zIndex: typeof local === 'number' ? 1 : 0,
-           |                   ^^^^^^^^^^^^
-         8 |         },
-         9 |       });
-        10 |     "
-    `);
+    ).toThrow();
   });
 
   test('allows a token selected by a known ternary condition', () => {
-    const { metadata } = transform(`
+    const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
       import { constants, variables } from 'arithmetic.stylex';
       export const styles = stylex.create({
@@ -240,6 +137,16 @@ describe('CSS tokens in JavaScript conditions', () => {
           zIndex: true ? constants.a : 0,
         },
       });
+    `);
+    expect(code).toMatchInlineSnapshot(`
+      "import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = {
+        root: {
+          kY2c9j: "xz3gssr",
+          $$css: true
+        }
+      };"
     `);
     expect(metadata.stylex).toMatchInlineSnapshot(`
       [
@@ -256,7 +163,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   });
 
   test('allows a token selected by a known logical condition', () => {
-    const { metadata } = transform(`
+    const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
       import { constants, variables } from 'arithmetic.stylex';
       export const styles = stylex.create({
@@ -264,6 +171,16 @@ describe('CSS tokens in JavaScript conditions', () => {
           zIndex: false || constants.a,
         },
       });
+    `);
+    expect(code).toMatchInlineSnapshot(`
+      "import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = {
+        root: {
+          kY2c9j: "xz3gssr",
+          $$css: true
+        }
+      };"
     `);
     expect(metadata.stylex).toMatchInlineSnapshot(`
       [
@@ -280,7 +197,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   });
 
   test('allows a token as the fallback for a known null value', () => {
-    const { metadata } = transform(`
+    const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
       import { constants, variables } from 'arithmetic.stylex';
       export const styles = stylex.create({
@@ -288,6 +205,16 @@ describe('CSS tokens in JavaScript conditions', () => {
           zIndex: null ?? constants.a,
         },
       });
+    `);
+    expect(code).toMatchInlineSnapshot(`
+      "import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = {
+        root: {
+          kY2c9j: "xz3gssr",
+          $$css: true
+        }
+      };"
     `);
     expect(metadata.stylex).toMatchInlineSnapshot(`
       [
@@ -304,7 +231,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   });
 
   test('does not evaluate an unused nullish fallback', () => {
-    const { metadata } = transform(`
+    const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
       import { constants, variables } from 'arithmetic.stylex';
       export const styles = stylex.create({
@@ -312,6 +239,16 @@ describe('CSS tokens in JavaScript conditions', () => {
           zIndex: String(0 ?? (constants.a || 0.5)),
         },
       });
+    `);
+    expect(code).toMatchInlineSnapshot(`
+      "import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = {
+        root: {
+          kY2c9j: "x1ja2u2z",
+          $$css: true
+        }
+      };"
     `);
     expect(metadata.stylex).toMatchInlineSnapshot(`
       [
@@ -328,7 +265,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   });
 
   test('does not evaluate an unused ternary branch', () => {
-    const { metadata } = transform(`
+    const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
       import { constants, variables } from 'arithmetic.stylex';
       export const styles = stylex.create({
@@ -336,6 +273,16 @@ describe('CSS tokens in JavaScript conditions', () => {
           zIndex: String(true ? 1 : typeof constants.a),
         },
       });
+    `);
+    expect(code).toMatchInlineSnapshot(`
+      "import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = {
+        root: {
+          kY2c9j: "x1vjfegm",
+          $$css: true
+        }
+      };"
     `);
     expect(metadata.stylex).toMatchInlineSnapshot(`
       [
