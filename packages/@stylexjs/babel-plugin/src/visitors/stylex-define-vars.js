@@ -26,7 +26,6 @@ import { isCSSType } from '../shared/types';
 import { convertObjectToAST } from '../utils/js-to-ast';
 import { createVarGroupProxy, evaluate } from '../utils/evaluate-path';
 import { isVariableNamedExported } from '../utils/ast-helpers';
-import { evaluationError } from '../utils/evaluation-result';
 
 class DefineVarsValueError extends Error {}
 
@@ -172,14 +171,16 @@ export default function transformStyleXDefineVars(
       },
     });
 
-    const evaluation = evaluate(firstArg, state, {
+    const { confident, value } = evaluate(firstArg, state, {
       identifiers,
       memberExpressions,
     });
-    if (!evaluation.confident) {
-      throw evaluationError(evaluation.error);
+    if (!confident) {
+      throw callExpressionPath.buildCodeFrameError(
+        messages.nonStaticValue('defineVars'),
+        SyntaxError,
+      );
     }
-    const { value } = evaluation;
     if (typeof value !== 'object' || value == null) {
       throw callExpressionPath.buildCodeFrameError(
         messages.nonStyleObject('defineVars'),
@@ -347,14 +348,8 @@ function evaluateDefineVarsFunction(
   let result;
   try {
     result = fn();
-  } catch (error) {
-    // Evaluation failures inside function values carry the evaluator's
-    // deopt reason in the error message — preserve it.
-    throw new DefineVarsValueError(
-      error instanceof Error && error.message !== ''
-        ? error.message
-        : messages.nonStaticValue('defineVars'),
-    );
+  } catch {
+    throw new DefineVarsValueError(messages.nonStaticValue('defineVars'));
   } finally {
     dependencyState.setCurrentDependencies(prevDependencies);
   }

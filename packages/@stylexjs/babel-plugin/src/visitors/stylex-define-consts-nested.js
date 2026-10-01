@@ -21,8 +21,6 @@ import { convertObjectToAST } from '../utils/js-to-ast';
 import StateManager from '../utils/state-manager';
 import { isCallTo, validateDefineCall } from './visitor-utils';
 
-import { evaluationError } from '../utils/evaluation-result';
-
 /// Transforms `stylex.unstable_defineConstsNested` calls.
 /// Validates, evaluates the argument statically (with imports disabled),
 /// delegates to the shared styleXDefineConstsNested transform, replaces
@@ -63,11 +61,13 @@ export default function transformStyleXDefineConstsNested(
   };
   state.applyStylexEnv(evaluatePathFnConfig.identifiers);
 
-  const evaluation = evaluate(firstArg, state, evaluatePathFnConfig);
-  if (!evaluation.confident) {
-    throw evaluationError(evaluation.error);
+  const { confident, value } = evaluate(firstArg, state, evaluatePathFnConfig);
+  if (!confident) {
+    throw callExpressionPath.buildCodeFrameError(
+      messages.nonStaticValue('unstable_defineConstsNested'),
+      SyntaxError,
+    );
   }
-  const { value } = evaluation;
   if (typeof value !== 'object' || value == null) {
     throw callExpressionPath.buildCodeFrameError(
       messages.nonStyleObject('unstable_defineConstsNested'),

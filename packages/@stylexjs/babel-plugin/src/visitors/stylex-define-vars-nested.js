@@ -21,8 +21,6 @@ import { convertObjectToAST } from '../utils/js-to-ast';
 import { evaluate } from '../utils/evaluate-path';
 import { isCallTo, validateDefineCall, buildEvalConfig } from './visitor-utils';
 
-import { evaluationError } from '../utils/evaluation-result';
-
 /// Transforms `stylex.unstable_defineVarsNested` calls.
 /// Validates, evaluates the argument statically, delegates to the shared
 /// stylexDefineVarsNested transform, replaces the AST, and registers styles.
@@ -61,14 +59,16 @@ export default function transformStyleXDefineVarsNested(
     otherInjectedCSSRules,
   );
 
-  const evaluation = evaluate(firstArg, state, {
+  const { confident, value } = evaluate(firstArg, state, {
     identifiers,
     memberExpressions,
   });
-  if (!evaluation.confident) {
-    throw evaluationError(evaluation.error);
+  if (!confident) {
+    throw callExpressionPath.buildCodeFrameError(
+      messages.nonStaticValue('unstable_defineVarsNested'),
+      SyntaxError,
+    );
   }
-  const { value } = evaluation;
   if (typeof value !== 'object' || value == null) {
     throw callExpressionPath.buildCodeFrameError(
       messages.nonStyleObject('unstable_defineVarsNested'),

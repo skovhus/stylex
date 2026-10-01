@@ -16,7 +16,6 @@ function transformWithConstants(source) {
       export const constants = stylex.defineConsts({
         a: 26,
         gutter: '16px',
-        text: 'hello',
         url: 'https://example.com/x.png',
         line: 'sidebar',
       });
@@ -47,9 +46,6 @@ describe('arithmetic regression snapshots', () => {
   test('calc-shaped keys in intermediate JavaScript lookup tables', () => {
     const { code, metadata, css } = transformWithConstants(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
       const key = 'calc(100% - 10px)';
       const values = {
         [key]: 0.5,
@@ -62,9 +58,6 @@ describe('arithmetic regression snapshots', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
       const key = 'calc(100% - 10px)';
       const values = {
         [key]: 0.5
@@ -94,54 +87,10 @@ describe('arithmetic regression snapshots', () => {
     `);
   });
 
-  test('imported constants inside quoted content', () => {
-    const { code, metadata, css } = transformWithConstants(`
-      import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
-      export const styles = stylex.create({
-        root: {
-          content: \`"\${constants.text}"\`,
-        },
-      });
-    `);
-    expect(code).toMatchInlineSnapshot(`
-      "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
-      export const styles = {
-        root: {
-          kah6P1: "x1319nye",
-          $$css: true
-        }
-      };"
-    `);
-    expect(metadata).toMatchInlineSnapshot(`
-      [
-        [
-          "x1319nye",
-          {
-            "ltr": ".x1319nye{content:"var(--x1nahs8e)"}",
-            "rtl": null,
-          },
-          3000,
-        ],
-      ]
-    `);
-    expect(css).toMatchInlineSnapshot(`
-      ":root, .x1w9femo{--x1ez17s4:8px;}
-      .x1319nye:not(#\\#){content:"hello"}"
-    `);
-  });
-
   test('imported constants inside quoted URLs', () => {
     const { code, metadata, css } = transformWithConstants(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           backgroundImage: \`url("\${constants.url}")\`,
@@ -150,9 +99,7 @@ describe('arithmetic regression snapshots', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kKwaWg: "x1xmaqyp",
@@ -181,9 +128,7 @@ describe('arithmetic regression snapshots', () => {
   test('imported constants inside grid line brackets', () => {
     const { code, metadata, css } = transformWithConstants(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           gridTemplateColumns: \`[\${constants.line}] 1fr\`,
@@ -192,9 +137,7 @@ describe('arithmetic regression snapshots', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
-      const local = constants.a;
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kumcoG: "x1w9nni0",
@@ -224,7 +167,7 @@ describe('arithmetic regression snapshots', () => {
     expect(() =>
       transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const round = (value) => Math.round(value);
       export const styles = stylex.create({
         root: {
@@ -240,7 +183,6 @@ describe('arithmetic regression snapshots', () => {
       import * as stylex from '@stylexjs/stylex';
       import { constants, variables } from 'arithmetic.stylex';
       const gutter = constants.gutter;
-      const local = constants.a;
       export const styles = stylex.create({
         root: {
           borderRadius: \`\${gutter}/\${variables.gap}\`,
@@ -251,7 +193,6 @@ describe('arithmetic regression snapshots', () => {
       "import * as stylex from '@stylexjs/stylex';
       import { constants, variables } from 'arithmetic.stylex';
       const gutter = constants.gutter;
-      const local = constants.a;
       export const styles = {
         root: {
           kaIpWk: "x1d5sp0r",
@@ -281,7 +222,7 @@ describe('arithmetic regression snapshots', () => {
     expect(() =>
       transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           transform: \`translateX(\${constants.gutter}px)\`,
@@ -294,9 +235,8 @@ describe('arithmetic regression snapshots', () => {
   test('modern CSS length units survive constant substitution', () => {
     const { code, metadata, css } = transformWithConstants(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const gutter = constants.gutter;
-      const local = constants.a;
       export const styles = stylex.create({
         root: {
           width: gutter - '2cqw',
@@ -309,9 +249,8 @@ describe('arithmetic regression snapshots', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const gutter = constants.gutter;
-      const local = constants.a;
       export const styles = {
         root: {
           kzqmXN: "x20rgyk",
@@ -380,8 +319,7 @@ describe('arithmetic regression snapshots', () => {
   test('Math-derived divisors retain their precision after constant substitution', () => {
     const { code, metadata, css } = transformWithConstants(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
+      import { constants } from 'arithmetic.stylex';
       const local = constants.a;
       export const styles = stylex.create({
         root: {
@@ -391,8 +329,7 @@ describe('arithmetic regression snapshots', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
-      const gutter = constants.gutter;
+      import { constants } from 'arithmetic.stylex';
       const local = constants.a;
       export const styles = {
         root: {
@@ -424,7 +361,7 @@ describe('CSS token arithmetic', () => {
   test('reuses a derived alias without losing expression grouping', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const local = constants.a;
       const derived = (local + 2) * 3;
       export const styles = stylex.create({
@@ -435,7 +372,7 @@ describe('CSS token arithmetic', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const local = constants.a;
       const derived = (local + 2) * 3;
       export const styles = {
@@ -462,7 +399,7 @@ describe('CSS token arithmetic', () => {
   test('arrow helper retains the imported token', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const add = (value) => value + 2;
       export const styles = stylex.create({
         root: {
@@ -472,7 +409,7 @@ describe('CSS token arithmetic', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const add = value => value + 2;
       export const styles = {
         root: {
@@ -498,7 +435,7 @@ describe('CSS token arithmetic', () => {
   test('negates an imported arithmetic expression', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           zIndex: -(constants.a + 2),
@@ -507,7 +444,7 @@ describe('CSS token arithmetic', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kY2c9j: "xvj3xgs",
@@ -532,7 +469,7 @@ describe('CSS token arithmetic', () => {
   test('supports explicit Unicode custom property names', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { variables } from 'arithmetic.stylex';
       const local = variables['--größe'];
       export const styles = stylex.create({
         root: {
@@ -542,7 +479,7 @@ describe('CSS token arithmetic', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { variables } from 'arithmetic.stylex';
       const local = variables['--größe'];
       export const styles = {
         root: {
@@ -599,14 +536,14 @@ describe('CSS token arithmetic', () => {
     `);
   });
 
-  test('arithmetic inside fallback arrays and conditional values', () => {
+  test('arithmetic inside firstThatWorks and conditional values', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { variables } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           width: {
-            default: [variables.gap, variables.gap * 2],
+            default: stylex.firstThatWorks(variables.gap * 2, variables.gap),
             ':hover': variables.gap * 3,
             '@media (min-width: 600px)': variables.gap / 2,
           },
@@ -615,7 +552,7 @@ describe('CSS token arithmetic', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { variables } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kzqmXN: "x4uyozk x16tcvvl xzlu0ra",
@@ -656,7 +593,7 @@ describe('CSS token arithmetic', () => {
   test('keeps separated string concatenation as a CSS list', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { variables } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           margin: variables.gap + ' 4px',
@@ -665,7 +602,7 @@ describe('CSS token arithmetic', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { variables } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kogj98: "x1hbe5so",

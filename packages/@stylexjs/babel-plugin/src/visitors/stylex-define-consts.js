@@ -16,7 +16,6 @@ import { utils, defineConsts as styleXDefineConsts, messages } from '../shared';
 import { convertObjectToAST } from '../utils/js-to-ast';
 import StateManager from '../utils/state-manager';
 import { isVariableNamedExported } from '../utils/ast-helpers';
-import { evaluationError } from '../utils/evaluation-result';
 
 /// This function looks for `stylex.defineConsts` calls and transforms them.
 /// 1. It finds and validates the first argument to `stylex.defineConsts`.
@@ -59,11 +58,17 @@ export default function transformStyleXDefineConsts(
     };
     state.applyStylexEnv(evaluatePathFnConfig.identifiers);
 
-    const evaluation = evaluate(firstArg, state, evaluatePathFnConfig);
-    if (!evaluation.confident) {
-      throw evaluationError(evaluation.error);
+    const { confident, value } = evaluate(
+      firstArg,
+      state,
+      evaluatePathFnConfig,
+    );
+    if (!confident) {
+      throw callExpressionPath.buildCodeFrameError(
+        messages.nonStaticValue('defineConsts'),
+        SyntaxError,
+      );
     }
-    const { value } = evaluation;
     if (typeof value !== 'object' || value == null) {
       throw callExpressionPath.buildCodeFrameError(
         messages.nonStyleObject('defineConsts'),

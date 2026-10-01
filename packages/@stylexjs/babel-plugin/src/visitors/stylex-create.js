@@ -29,7 +29,6 @@ import {
 import { convertObjectToAST } from '../utils/js-to-ast';
 import { messages } from '../shared';
 import { evaluateStyleXCreateArg } from './parse-stylex-create-arg';
-import { evaluationError } from '../utils/evaluation-result';
 import flatMapExpandedShorthands from '../shared/preprocess-rules';
 import { hoistExpression, pathReplaceHoisted } from '../utils/ast-helpers';
 
@@ -208,14 +207,21 @@ export default function transformStyleXCreate(
     });
     state.applyStylexEnv(identifiers);
 
-    const evaluation = evaluateStyleXCreateArg(firstArg, state, {
-      identifiers,
-      memberExpressions,
-    });
-    if (!evaluation.confident) {
-      throw evaluationError(evaluation.error);
+    const { confident, value, fns, reason, deopt } = evaluateStyleXCreateArg(
+      firstArg,
+      state,
+      {
+        identifiers,
+        memberExpressions,
+      },
+    );
+
+    if (!confident) {
+      throw (deopt ?? path).buildCodeFrameError(
+        reason ?? messages.nonStaticValue('create'),
+        SyntaxError,
+      );
     }
-    const { value, fns } = evaluation;
     const plainObject = value;
 
     // add injection that mark variables used for dynamic styles as `inherits: false`

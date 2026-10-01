@@ -11,7 +11,7 @@ import { TokenParser } from '../token-parser';
 import type { TokenDimension } from '@csstools/css-tokenizer';
 import { TokenType } from '@csstools/css-tokenizer';
 
-type Unit = 'dpi' | 'dpcm' | 'dppx' | 'x';
+type Unit = 'dpi' | 'dpcm' | 'dppx';
 
 export class Resolution {
   +value: number;
@@ -23,11 +23,12 @@ export class Resolution {
   toString(): string {
     return `${this.value}${this.unit}`;
   }
-  static UNITS: $ReadOnlyArray<Unit> = ['dpi', 'dpcm', 'dppx', 'x'];
+  static UNITS: $ReadOnlyArray<Unit> = ['dpi', 'dpcm', 'dppx'];
   static get parser(): TokenParser<Resolution> {
     return TokenParser.token<TokenDimension>(TokenType.Dimension)
-      .where((v: TokenDimension): implies v is TokenDimension =>
-        Resolution.UNITS.some((unit) => unit === v[4].unit),
+      .where(
+        (v: TokenDimension): implies v is TokenDimension =>
+          v[4].unit === 'dpi' || v[4].unit === 'dpcm' || v[4].unit === 'dppx',
       )
       .map((v) => new Resolution(v[4].value, v[4].unit as $FlowFixMe as Unit));
   }

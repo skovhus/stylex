@@ -66,7 +66,7 @@ describe('@stylexjs/babel-plugin', () => {
           import stylex from 'stylex';
           const variables = stylex.createTheme(genStyles(), {});
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('createTheme'));
 
       expect(() => {
         transform(`
@@ -82,7 +82,7 @@ describe('@stylexjs/babel-plugin', () => {
           import stylex from 'stylex';
           const variables = stylex.createTheme({__varGroupHash__: 'x568ih9'}, genStyles());
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('createTheme'));
 
       expect(() => {
         transform(`
@@ -102,7 +102,7 @@ describe('@stylexjs/babel-plugin', () => {
             {__varGroupHash__: 'x568ih9', labelColor: 'var(--labelColorHash)'},
             {[labelColor]: 'red',});
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('createTheme'));
     });
 
     /* Values */
@@ -139,7 +139,7 @@ describe('@stylexjs/babel-plugin', () => {
             {labelColor: labelColor,}
           );
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('createTheme'));
 
       expect(() => {
         transform(`
@@ -149,7 +149,7 @@ describe('@stylexjs/babel-plugin', () => {
             {labelColor: labelColor(),}
           );
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('createTheme'));
     });
   });
 });

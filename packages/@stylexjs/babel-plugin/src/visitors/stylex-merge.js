@@ -168,9 +168,12 @@ export default function transformStyleXMerge(
         if (nonNullProps === true) {
           styleNonNullProps = true;
         } else {
-          const evaluation = evaluate(path, state, evaluatePathFnConfig);
-          const styleValue = evaluation.confident ? evaluation.value : null;
-          if (!evaluation.confident || styleValue == null) {
+          const { confident, value: styleValue } = evaluate(
+            path,
+            state,
+            evaluatePathFnConfig,
+          );
+          if (!confident || styleValue == null) {
             nonNullProps = true;
             styleNonNullProps = true;
           } else {

@@ -28,10 +28,6 @@ describe('Test CSS Type: <resolution>', () => {
     );
   });
 
-  test('parses the x alias', () => {
-    expect(Resolution.parser.parseToEnd('2x')).toEqual(new Resolution(2, 'x'));
-  });
-
   test('rejects invalid resolution values', () => {
     expect(() => Resolution.parser.parseToEnd('invalid')).toThrow();
     expect(() => Resolution.parser.parseToEnd('10abc')).toThrow();

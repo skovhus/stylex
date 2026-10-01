@@ -25,7 +25,7 @@ export class Angle {
   static get parser(): TokenParser<Angle> {
     const withUnit = TokenParser.tokens.Dimension.map((v) => v[4])
       .where((v: TokenDimension[4]): implies v is TokenDimension[4] =>
-        Angle.UNITS.includes(v.unit.toLowerCase()),
+        Angle.UNITS.includes(v.unit),
       )
       .map((v) => new Angle(v.value, v.unit));
 

@@ -72,7 +72,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     expect(() =>
       transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const fallback = 0;
       export const styles = stylex.create({
         root: {
@@ -87,7 +87,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     expect(() =>
       transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const local = constants.a * 2;
       export const styles = stylex.create({
         root: {
@@ -102,7 +102,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     expect(() =>
       transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const local = constants.a;
       export const styles = stylex.create({
         root: {
@@ -117,7 +117,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     expect(() =>
       transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       const local = constants.a * 2;
       export const styles = stylex.create({
         root: {
@@ -131,7 +131,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   test('allows a token selected by a known ternary condition', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           zIndex: true ? constants.a : 0,
@@ -140,7 +140,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kY2c9j: "xz3gssr",
@@ -165,7 +165,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   test('allows a token selected by a known logical condition', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           zIndex: false || constants.a,
@@ -174,7 +174,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kY2c9j: "xz3gssr",
@@ -199,7 +199,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   test('allows a token as the fallback for a known null value', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           zIndex: null ?? constants.a,
@@ -208,7 +208,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kY2c9j: "xz3gssr",
@@ -233,7 +233,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   test('does not evaluate an unused nullish fallback', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           zIndex: String(0 ?? (constants.a || 0.5)),
@@ -242,7 +242,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kY2c9j: "x1ja2u2z",
@@ -267,7 +267,7 @@ describe('CSS tokens in JavaScript conditions', () => {
   test('does not evaluate an unused ternary branch', () => {
     const { code, metadata } = transform(`
       import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = stylex.create({
         root: {
           zIndex: String(true ? 1 : typeof constants.a),
@@ -276,7 +276,7 @@ describe('CSS tokens in JavaScript conditions', () => {
     `);
     expect(code).toMatchInlineSnapshot(`
       "import * as stylex from '@stylexjs/stylex';
-      import { constants, variables } from 'arithmetic.stylex';
+      import { constants } from 'arithmetic.stylex';
       export const styles = {
         root: {
           kY2c9j: "x1vjfegm",

@@ -22,7 +22,6 @@ import {
 } from '../shared';
 import { convertObjectToAST } from '../utils/js-to-ast';
 import { evaluate } from '../utils/evaluate-path';
-import { evaluationError } from '../utils/evaluation-result';
 import path from 'node:path';
 
 /// This function looks for `stylex.createTheme` calls and transforms them.
@@ -69,11 +68,16 @@ export default function transformStyleXCreateTheme(
     const firstArg = args[0];
     const secondArg = args[1];
 
-    const evaluation1 = evaluate(firstArg, state);
-    if (!evaluation1.confident) {
-      throw evaluationError(evaluation1.error);
+    const { confident: confident1, value: variables } = evaluate(
+      firstArg,
+      state,
+    );
+    if (!confident1) {
+      throw callExpressionPath.buildCodeFrameError(
+        messages.nonStaticValue('createTheme'),
+        SyntaxError,
+      );
     }
-    const { value: variables } = evaluation1;
 
     const otherInjectedCSSRules: { [propertyName: string]: InjectableStyle } =
       {};
@@ -139,14 +143,20 @@ export default function transformStyleXCreateTheme(
 
     state.applyStylexEnv(identifiers);
 
-    const evaluation2 = evaluate(secondArg, state, {
-      identifiers,
-      memberExpressions,
-    });
-    if (!evaluation2.confident) {
-      throw evaluationError(evaluation2.error);
+    const { confident: confident2, value: overrides } = evaluate(
+      secondArg,
+      state,
+      {
+        identifiers,
+        memberExpressions,
+      },
+    );
+    if (!confident2) {
+      throw callExpressionPath.buildCodeFrameError(
+        messages.nonStaticValue('createTheme'),
+        SyntaxError,
+      );
     }
-    const { value: overrides } = evaluation2;
     if (typeof overrides !== 'object' || overrides == null) {
       throw callExpressionPath.buildCodeFrameError(
         messages.nonStyleObject('createTheme'),

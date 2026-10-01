@@ -6,10 +6,12 @@
  *
  * @flow strict
  *
- * Shared visitor helpers. `isCallTo`, `validateDefineCall`, and
- * `buildEvalConfig` extract common patterns across the 3 nested visitors
- * (unstable_defineVarsNested / unstable_defineConstsNested /
- * unstable_createThemeNested).
+ * Shared visitor helpers for the unstable_defineVarsNested / unstable_defineConstsNested /
+ * unstable_createThemeNested visitors. These extract common patterns (call detection,
+ * validation, eval config setup) to avoid duplication across the 3 nested visitors.
+ *
+ * NOTE: These helpers only serve the NEW nested visitors. The existing flat visitors
+ * (stylex-define-vars.js, stylex-define-consts.js, stylex-create-theme.js) are untouched.
  */
 
 import type { NodePath } from '@babel/traverse';

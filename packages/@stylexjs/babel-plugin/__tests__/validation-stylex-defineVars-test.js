@@ -91,7 +91,7 @@ describe('@stylexjs/babel-plugin', () => {
           import * as stylex from '@stylexjs/stylex';
           export const vars = stylex.defineVars(genStyles());
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('defineVars'));
     });
 
     test('valid argument: object', () => {
@@ -163,7 +163,7 @@ describe('@stylexjs/babel-plugin', () => {
             [labelColor]: 'red',
           });
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('defineVars'));
     });
 
     /* Values */
@@ -176,7 +176,7 @@ describe('@stylexjs/babel-plugin', () => {
             labelColor: labelColor,
           });
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('defineVars'));
 
       expect(() => {
         transform(`
@@ -185,7 +185,7 @@ describe('@stylexjs/babel-plugin', () => {
             labelColor: labelColor(),
           });
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('defineVars'));
     });
 
     test('valid value: number', () => {
@@ -257,7 +257,7 @@ describe('@stylexjs/babel-plugin', () => {
             textMuted: () => getColor(colors.text),
           });
         `);
-      }).toThrow('Referenced constant is not defined.');
+      }).toThrow(messages.nonStaticValue('defineVars'));
     });
 
     test('valid function value: returns stylex.types', () => {

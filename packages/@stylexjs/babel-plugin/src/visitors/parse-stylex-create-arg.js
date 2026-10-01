@@ -10,12 +10,10 @@
 /* eslint-disable no-unused-vars */
 import type { NodePath } from '@babel/traverse';
 import type { FunctionConfig } from '../utils/evaluate-path';
-import type { EvaluationResult } from '../utils/evaluation-result';
 
 import * as t from '@babel/types';
 import StateManager from '../utils/state-manager';
 import { evaluate } from '../utils/evaluate-path';
-import { evaluationError } from '../utils/evaluation-result';
 import { create, utils } from '../shared';
 import { messages } from '../shared';
 import {
@@ -44,7 +42,13 @@ export function evaluateStyleXCreateArg(
   path: NodePath<>,
   traversalState: StateManager,
   functions: FunctionConfig = { identifiers: {}, memberExpressions: {} },
-): EvaluationResult<any, { fns?: DynamicFns }> {
+): $ReadOnly<{
+  confident: boolean,
+  value: any,
+  deopt?: null | NodePath<>,
+  reason?: string,
+  fns?: DynamicFns,
+}> {
   if (!path.isObjectExpression()) {
     return evaluate(path, traversalState, functions);
   }
@@ -59,7 +63,7 @@ export function evaluateStyleXCreateArg(
     const objPropPath: NodePath<t.ObjectProperty> = prop;
     const keyResult = evaluateObjKey(objPropPath, traversalState, functions);
     if (!keyResult.confident) {
-      return keyResult;
+      return { confident: false, deopt: keyResult.deopt, value: null };
     }
     const key = keyResult.value;
 
@@ -101,7 +105,8 @@ export function evaluateStyleXCreateArg(
     );
 
     if (!evalResult.confident) {
-      return evalResult;
+      const { confident, value: v, deopt } = evalResult;
+      return { confident, value: v, deopt };
     }
     const { value: v, inlineStyles } = evalResult;
     value[key] = v;
@@ -116,7 +121,13 @@ function evaluatePartialObjectRecursively(
   traversalState: StateManager,
   functions: FunctionConfig = { identifiers: {}, memberExpressions: {} },
   keyPath: $ReadOnlyArray<string> = [],
-): EvaluationResult<any, { inlineStyles?: $ReadOnly<TInlineStyles> }> {
+): $ReadOnly<{
+  confident: boolean,
+  value: any,
+  deopt?: null | NodePath<>,
+  reason?: string,
+  inlineStyles?: $ReadOnly<TInlineStyles>,
+}> {
   const obj: { [string]: mixed } = {};
   const inlineStyles: TInlineStyles = {};
   const props: $ReadOnlyArray<
@@ -124,14 +135,7 @@ function evaluatePartialObjectRecursively(
   > = path.get('properties');
   for (const prop of props) {
     if (prop.isObjectMethod()) {
-      return {
-        confident: false,
-        error: {
-          kind: 'non-static',
-          path: prop,
-          message: messages.nonStaticValue('create'),
-        },
-      };
+      return { value: null, confident: false };
     }
     if (prop.isSpreadElement()) {
       const result = evaluate(prop.get('argument'), traversalState, functions);
@@ -145,7 +149,7 @@ function evaluatePartialObjectRecursively(
     if (prop.isObjectProperty()) {
       const keyResult = evaluateObjKey(prop, traversalState, functions);
       if (!keyResult.confident) {
-        return keyResult;
+        return { confident: false, deopt: keyResult.deopt, value: null };
       }
       let key = keyResult.value;
 
@@ -168,7 +172,7 @@ function evaluatePartialObjectRecursively(
           [...keyPath, key],
         );
         if (!result.confident) {
-          return result;
+          return { confident: false, deopt: result.deopt, value: null };
         }
         obj[key] = result.value;
         // $FlowFixMe[unsafe-object-assign]
@@ -176,9 +180,6 @@ function evaluatePartialObjectRecursively(
       } else {
         const result = evaluate(valuePath, traversalState, functions);
         if (!result.confident) {
-          if (result.error.kind === 'css-token') {
-            throw evaluationError(result.error);
-          }
           const fullKeyPath = [...keyPath, key];
           const varName =
             '--x-' +
@@ -254,17 +255,21 @@ function evaluatePartialObjectRecursively(
   return { value: obj, confident: true, inlineStyles };
 }
 
+type KeyResult =
+  | { confident: true, value: string }
+  | { confident: false, deopt?: null | NodePath<> };
+
 function evaluateObjKey(
   prop: NodePath<t.ObjectProperty>,
   traversalState: StateManager,
   functions: FunctionConfig,
-): EvaluationResult<string> {
+): KeyResult {
   const keyPath: NodePath<t.ObjectProperty['key']> = prop.get('key');
   let key: string;
   if ((prop.node as t.ObjectProperty).computed) {
     const result = evaluate(keyPath, traversalState, functions);
     if (!result.confident) {
-      return result;
+      return { confident: false, deopt: result.deopt };
     }
     key = result.value;
   } else if (keyPath.isIdentifier()) {
