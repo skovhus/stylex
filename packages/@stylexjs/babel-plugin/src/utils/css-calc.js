@@ -191,25 +191,9 @@ export function evaluateCssTokenBinary(
       }
       return deopt(errMsgs.INVALID_CALC_OPERAND(operator));
     case '==':
-      if (left == null || right == null) {
-        return value(left == right); // eslint-disable-line eqeqeq
-      }
-      return deopt(errMsgs.UNSUPPORTED_CSS_VAR_COMPARISON(operator));
     case '!=':
-      if (left == null || right == null) {
-        return value(left != right); // eslint-disable-line eqeqeq
-      }
-      return deopt(errMsgs.UNSUPPORTED_CSS_VAR_COMPARISON(operator));
     case '===':
-      if (left == null || right == null) {
-        return value(left === right);
-      }
-      return deopt(errMsgs.UNSUPPORTED_CSS_VAR_COMPARISON(operator));
     case '!==':
-      if (left == null || right == null) {
-        return value(left !== right);
-      }
-      return deopt(errMsgs.UNSUPPORTED_CSS_VAR_COMPARISON(operator));
     case '<':
     case '>':
     case '<=':

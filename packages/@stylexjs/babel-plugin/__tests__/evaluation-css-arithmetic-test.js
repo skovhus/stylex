@@ -8,6 +8,7 @@
 'use strict';
 
 const { transform, stylexPlugin } = require('./__fixtures__/css-arithmetic');
+
 function transformWithConstants(source) {
   const tokens = transform(
     `
@@ -34,6 +35,12 @@ function transformWithConstants(source) {
     ),
   };
 }
+
+const definitions = `
+      import * as stylex from '@stylexjs/stylex';
+      export const constants = stylex.defineConsts({ a: 26, b: 14, gutter: '16px' });
+      export const variables = stylex.defineVars({ gap: '8px' });
+    `;
 
 describe('arithmetic regression snapshots', () => {
   test('calc-shaped keys in intermediate JavaScript lookup tables', () => {
@@ -350,6 +357,268 @@ describe('arithmetic regression snapshots', () => {
           ],
         ],
       }
+    `);
+  });
+});
+
+describe('CSS token arithmetic', () => {
+  test('reuses a derived alias without losing expression grouping', () => {
+    const { metadata } = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      const local = constants.a;
+      const derived = (local + 2) * 3;
+      export const styles = stylex.create({
+        root: {
+          zIndex: derived / (derived - 1),
+        },
+      });
+    `);
+    expect(metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "x1xutyev",
+          {
+            "ltr": ".x1xutyev{z-index:calc(((var(--xkc4to4) + 2) * 3) / (((var(--xkc4to4) + 2) * 3) - 1))}",
+            "rtl": null,
+          },
+          3000,
+        ],
+      ]
+    `);
+  });
+
+  test('arrow helper retains the imported token', () => {
+    const { metadata } = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      const add = (value) => value + 2;
+      export const styles = stylex.create({
+        root: {
+          zIndex: add(constants.a),
+        },
+      });
+    `);
+    expect(metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "xoqvakk",
+          {
+            "ltr": ".xoqvakk{z-index:calc(var(--xkc4to4) + 2)}",
+            "rtl": null,
+          },
+          3000,
+        ],
+      ]
+    `);
+  });
+
+  test('negates an imported arithmetic expression', () => {
+    const { metadata } = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = stylex.create({
+        root: {
+          zIndex: -(constants.a + 2),
+        },
+      });
+    `);
+    expect(metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "xvj3xgs",
+          {
+            "ltr": ".xvj3xgs{z-index:calc(-1 * (var(--xkc4to4) + 2))}",
+            "rtl": null,
+          },
+          3000,
+        ],
+      ]
+    `);
+  });
+
+  test('supports explicit Unicode custom property names', () => {
+    const { metadata } = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      const local = variables['--größe'];
+      export const styles = stylex.create({
+        root: {
+          width: local * 2,
+        },
+      });
+    `);
+    expect(metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "x1a350m5",
+          {
+            "ltr": ".x1a350m5{width:calc(var(--größe) * 2)}",
+            "rtl": null,
+          },
+          4000,
+        ],
+      ]
+    `);
+  });
+
+  test('sets a custom property using a computed token key', () => {
+    const { metadata } = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = stylex.create({
+        root: {
+          [variables.gap]: constants.a * 2,
+        },
+      });
+    `);
+    expect(metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "x1ltxabd",
+          {
+            "ltr": ".x1ltxabd{--x1ez17s4:calc(var(--xkc4to4) * 2)}",
+            "rtl": null,
+          },
+          1,
+        ],
+      ]
+    `);
+  });
+
+  test('arithmetic inside fallback arrays and conditional values', () => {
+    const { metadata } = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = stylex.create({
+        root: {
+          width: {
+            default: [variables.gap, variables.gap * 2],
+            ':hover': variables.gap * 3,
+            '@media (min-width: 600px)': variables.gap / 2,
+          },
+        },
+      });
+    `);
+    expect(metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "x4uyozk",
+          {
+            "ltr": ".x4uyozk{width:var(--x1ez17s4);width:calc(var(--x1ez17s4) * 2)}",
+            "rtl": null,
+          },
+          4000,
+        ],
+        [
+          "x16tcvvl",
+          {
+            "ltr": ".x16tcvvl:hover{width:calc(var(--x1ez17s4) * 3)}",
+            "rtl": null,
+          },
+          4130,
+        ],
+        [
+          "xzlu0ra",
+          {
+            "ltr": "@media (min-width: 600px){.xzlu0ra.xzlu0ra{width:calc(var(--x1ez17s4) / 2)}}",
+            "rtl": null,
+          },
+          4200,
+        ],
+      ]
+    `);
+  });
+
+  test('keeps separated string concatenation as a CSS list', () => {
+    const { metadata } = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants, variables } from 'arithmetic.stylex';
+      export const styles = stylex.create({
+        root: {
+          margin: variables.gap + ' 4px',
+        },
+      });
+    `);
+    expect(metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "x1hbe5so",
+          {
+            "ltr": ".x1hbe5so{margin:var(--x1ez17s4) 4px}",
+            "rtl": null,
+          },
+          1000,
+        ],
+      ]
+    `);
+  });
+
+  test('substitutes constants after evaluating numeric Math and aliases', () => {
+    const tokens = transform(definitions, '/src/arithmetic.stylex.js');
+    const main = transform(`
+      import * as stylex from '@stylexjs/stylex';
+      import { constants as imported, variables } from 'arithmetic.stylex';
+      const local = imported.a;
+      const alias = local;
+      const scale = Math.max(Math.floor(2.9), Math.sqrt(4));
+      const combined = (alias + imported.b) / scale;
+      const gutter = imported.gutter;
+      export const styles = stylex.create({
+        root: {
+          zIndex: combined,
+          paddingTop: gutter * scale,
+          marginTop: gutter + variables.gap,
+          width: \`clamp(8px, \${gutter * scale}, 100px)\`,
+        },
+      });
+    `);
+    const rules = [...tokens.metadata.stylex, ...main.metadata.stylex];
+    const css = stylexPlugin.processStylexRules(rules, {
+      useLayers: false,
+    });
+    expect(main.metadata.stylex).toMatchInlineSnapshot(`
+      [
+        [
+          "x6llc3m",
+          {
+            "ltr": ".x6llc3m{z-index:calc((var(--xkc4to4) + var(--xm3quem)) / 2)}",
+            "rtl": null,
+          },
+          3000,
+        ],
+        [
+          "x1mcz15a",
+          {
+            "ltr": ".x1mcz15a{padding-top:calc(var(--x42dvfa) * 2)}",
+            "rtl": null,
+          },
+          4000,
+        ],
+        [
+          "xuukq4p",
+          {
+            "ltr": ".xuukq4p{margin-top:calc(var(--x42dvfa) + var(--x1ez17s4))}",
+            "rtl": null,
+          },
+          4000,
+        ],
+        [
+          "x1f5zy5f",
+          {
+            "ltr": ".x1f5zy5f{width:clamp(8px,calc(var(--x42dvfa) * 2),100px)}",
+            "rtl": null,
+          },
+          4000,
+        ],
+      ]
+    `);
+    expect(css).toMatchInlineSnapshot(`
+      ":root, .x1w9femo{--x1ez17s4:8px;}
+      .x6llc3m:not(#\\#){z-index:calc((26 + 14) / 2)}
+      .xuukq4p:not(#\\#):not(#\\#){margin-top:calc(16px + var(--x1ez17s4))}
+      .x1mcz15a:not(#\\#):not(#\\#){padding-top:calc(16px * 2)}
+      .x1f5zy5f:not(#\\#):not(#\\#){width:clamp(8px,calc(16px * 2),100px)}"
     `);
   });
 });

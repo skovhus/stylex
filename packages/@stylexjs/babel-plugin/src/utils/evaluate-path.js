@@ -967,12 +967,7 @@ function _evaluate(path: NodePath<>, state: State): any {
   }
 
   if (path.isLogicalExpression()) {
-    // Nullish coalescing does not inspect truthiness; token references retain
-    // their existing non-nullish behavior.
-    const left =
-      path.node.operator === '??'
-        ? evaluateCached(path.get('left'), state)
-        : evaluateCondition(path.get('left'), state);
+    const left = evaluateCondition(path.get('left'), state);
     if (state.error != null) return;
 
     // Evaluate only the branch JavaScript would use. Unused branches must not
